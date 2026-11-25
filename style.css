@@ -89,6 +89,10 @@ input[type=text], select, textarea {
   width: 100%;
 }
 input[type=range] { width: 100%; }
+/* A text field with a pick list beside it: type anything, or choose a preset. */
+.combo { display: flex; gap: 6px; }
+.combo input { flex: 1 1 auto; min-width: 0; }
+.combo select { flex: 0 0 76px; width: 76px; }
 textarea { resize: vertical; min-height: 38px; }
 button {
   font: inherit;

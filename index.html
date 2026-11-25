@@ -22,6 +22,13 @@
         <label>Contact name
           <input id="name" type="text" maxlength="40">
         </label>
+        <label><span id="groupLabel">Group name</span>
+          <input id="group" type="text" maxlength="40">
+        </label>
+        <label>Group members
+          <input id="members" type="text" maxlength="300" placeholder="Taras, Iryna, Bohdan"
+            title="Comma separated. Each received message then gets a list to pick its sender from.">
+        </label>
         <label>Style
           <select id="type">
             <option value="imessage">iMessage (blue)</option>
@@ -67,7 +74,32 @@
       <legend>Status bar</legend>
       <div class="grid">
         <label>Carrier
-          <input id="carrier" type="text" maxlength="24">
+          <span class="combo">
+            <input id="carrier" type="text" maxlength="24">
+            <select id="carrierPick" aria-label="Pick a carrier" title="Pick a carrier">
+              <option value="">Pick…</option>
+              <optgroup label="Japan">
+                <option>docomo</option>
+                <option>au</option>
+              </optgroup>
+              <optgroup label="Netherlands">
+                <option>KPN</option>
+                <option>Odido</option>
+              </optgroup>
+              <optgroup label="Singapore">
+                <option>Singtel</option>
+                <option>StarHub</option>
+              </optgroup>
+              <optgroup label="Ukraine">
+                <option>Kyivstar</option>
+                <option>Vodafone UA</option>
+              </optgroup>
+              <optgroup label="USA">
+                <option>Verizon</option>
+                <option>T-Mobile</option>
+              </optgroup>
+            </select>
+          </span>
         </label>
         <label>Clock
           <input id="time" type="text" maxlength="12">

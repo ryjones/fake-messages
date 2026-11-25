@@ -15,6 +15,8 @@
 
   const DEFAULTS = {
     name: 'Olena',
+    group: '',
+    members: '',
     me: 'you',
     type: 'imessage',
     theme: 'light',
@@ -246,15 +248,48 @@
 
   // ---------- layout ----------
 
-  // A conversation is a group chat as soon as any received message names its sender.
-  function isGroup() {
-    return state.messages.some((m) => m.kind === 'received' && (m.sender || '').trim());
+  function groupName() {
+    return (state.group || '').trim();
   }
 
+  // A conversation is a group chat when it has a group name, or as soon as any
+  // received message names its sender.
+  function isGroup() {
+    return !!groupName() || members().length > 0 ||
+      state.messages.some((m) => m.kind === 'received' && (m.sender || '').trim());
+  }
+
+  // The people listed in the group members field, in the order typed.
+  function members() {
+    const seen = [];
+    for (const part of String(state.members || '').split(/[,;\n]/)) {
+      const s = part.trim();
+      if (s && !seen.includes(s)) seen.push(s);
+    }
+    return seen;
+  }
+
+  // What the header shows: the group, else the contact.
+  function title() {
+    return groupName() || state.name.trim();
+  }
+
+  // Who a received message is from. In a named group the contact is the
+  // default member; without a group name the contact field is the title.
+  function senderOf(m) {
+    if (!m || m.kind !== 'received') return '';
+    return (m.sender || '').trim() || (groupName() ? state.name.trim() : '');
+  }
+
+  // Everyone else in the chat: the contact in a named group, the listed
+  // members, then anyone a message names who is not on the list.
   function groupSenders() {
     const seen = [];
+    const contact = state.name.trim();
+    if (groupName() && contact) seen.push(contact);
+    for (const s of members()) if (!seen.includes(s)) seen.push(s);
     for (const m of state.messages) {
-      const s = m.kind === 'received' ? (m.sender || '').trim() : '';
+      const s = senderOf(m);
       if (s && !seen.includes(s)) seen.push(s);
     }
     return seen;
@@ -272,7 +307,6 @@
     msgs.forEach((m, i) => { if (m.kind === 'sent') lastSent = i; });
 
     const group = isGroup();
-    const senderOf = (m) => (m && m.kind === 'received' ? (m.sender || '').trim() : '');
     // Consecutive bubbles from the same person form a run.
     const sameRun = (a, b) => !!a && !!b && a.kind === b.kind && a.kind !== 'time' &&
       (a.kind === 'sent' || !group || senderOf(a) === senderOf(b));
@@ -350,7 +384,6 @@
     const group = isGroup();
     let lastSent = -1;
     msgs.forEach((m, i) => { if (m.kind === 'sent') lastSent = i; });
-    const senderOf = (m) => (m && m.kind === 'received' ? (m.sender || '').trim() : '');
     const sameRun = (a, b) => !!a && !!b && a.kind === b.kind && a.kind !== 'time' &&
       (a.kind === 'sent' || !group || senderOf(a) === senderOf(b));
 
@@ -568,7 +601,7 @@
   // The contact: the chosen photo, else initials on grey.
   function drawContact(cx, cy, r) {
     if (!avatarImg) {
-      drawPerson(cx, cy, r, state.name, [THEMES.light.avatarA, THEMES.light.avatarB]);
+      drawPerson(cx, cy, r, title(), [THEMES.light.avatarA, THEMES.light.avatarB]);
       return;
     }
     ctx.save();
@@ -770,7 +803,7 @@
 
     const cy = STATUS_H + (s.header - STATUS_H) / 2;
     const senders = groupSenders();
-    const name = state.name.trim();
+    const name = title();
     drawChevron(11, cy, t.icon);
     ctx.textAlign = 'left';
     ctx.fillStyle = t.text;
@@ -959,11 +992,11 @@
 
     // A named sender, or a name starting with #, makes the window a channel.
     const group = isGroup();
-    let win = nick(state.name, 'query');
+    let win = nick(title(), 'query');
     const channel = group || win.startsWith('#');
     if (channel && !win.startsWith('#')) win = '#' + win;
     const me = nick(state.me, 'you');
-    const them = win.replace(/^#+/, '') || 'someone';
+    const them = (groupName() ? '' : win.replace(/^#+/, '')) || 'someone';
     const times = messageTimes();
 
     // Each row is a list of [text, colour, bold] segments.
@@ -975,7 +1008,7 @@
         return;
       }
       const sent = m.kind === 'sent';
-      const who = sent ? me : nick(m.sender, them);
+      const who = sent ? me : nick(senderOf(m), them);
       const head = [[termTime(times[i]) + ' ', p.fg], ['<', p.dim]];
       if (channel) head.push([' ', p.fg]);
       head.push([who, sent ? p.bold : p.fg, sent], ['>', p.dim], [' ', p.fg]);
@@ -1083,14 +1116,14 @@
       drawPerson(cx - 12, cy - 6, 16, senders[0], senderColors(senders[0]));
       drawPerson(cx + 12, cy + 7, 16, senders[1], senderColors(senders[1]));
     } else {
-      drawPerson(cx, cy, r, state.name, [t.avatarA, t.avatarB]);
+      drawPerson(cx, cy, r, title(), [t.avatarA, t.avatarB]);
     }
 
     // Name with a small disclosure chevron.
     font(11, 400);
     ctx.fillStyle = t.text;
     ctx.textAlign = 'center';
-    let name = state.name.trim();
+    let name = title();
     while (name && ctx.measureText(name).width > 220) name = name.slice(0, -2).trimEnd() + '…';
     ctx.fillText(name, cx - 4, 124);
     const nw = ctx.measureText(name).width;
@@ -1277,7 +1310,7 @@
 
   // ---------- editor ----------
 
-  const FIELDS = ['name', 'me', 'type', 'theme', 'receipt', 'receiptTime', 'carrier', 'time', 'conn'];
+  const FIELDS = ['name', 'group', 'members', 'me', 'type', 'theme', 'receipt', 'receiptTime', 'carrier', 'time', 'conn'];
 
   function syncForm() {
     for (const id of FIELDS) $(id).value = state[id];
@@ -1296,6 +1329,8 @@
     $('receiptTime').disabled = !messages || state.receipt !== 'read';
     $('me').disabled = !term;
     $('avatarClear').disabled = !state.avatar;
+    $('groupLabel').textContent = term ? 'Channel name' : 'Group name';
+    $('group').placeholder = term ? '#channel (blank for a query)' : 'Blank for a one-to-one chat';
   }
 
   function el(tag, props, children) {
@@ -1316,13 +1351,20 @@
       kind.value = m.kind;
       kind.addEventListener('change', () => { m.kind = kind.value; buildMessages(); changed(); });
       const kindCell = el('div', { className: 'kind-cell' }, [kind]);
-      if (m.kind === 'received') {
-        const sender = el('input', {
-          type: 'text', maxLength: 30, value: m.sender || '',
-          placeholder: 'Sender (group)', ariaLabel: 'Sender name',
-          title: 'Name shown above the bubble in a group chat',
-        });
-        sender.addEventListener('input', () => { m.sender = sender.value; changed(); });
+      // In a group, each received message picks who it is from.
+      if (m.kind === 'received' && isGroup()) {
+        const contact = state.name.trim();
+        const named = !!groupName();
+        const cur = (m.sender || '').trim();
+        const sender = el('select', { ariaLabel: 'From', title: 'Who this message is from' }, [
+          el('option', { value: '', textContent: named ? (contact || 'Contact') : 'No sender' }),
+        ]);
+        for (const s of groupSenders()) {
+          if (named && s === contact) continue; // already the blank option
+          sender.append(el('option', { value: s, textContent: s }));
+        }
+        sender.value = named && cur === contact ? '' : cur;
+        sender.addEventListener('change', () => { m.sender = sender.value; buildMessages(); changed(); });
         kindCell.append(sender);
       }
       // Only Messages hides per-message times; the other styles print one on every line.
@@ -1407,7 +1449,8 @@
     for (const id of FIELDS) {
       $(id).addEventListener('input', () => {
         state[id] = $(id).value;
-        if (id === 'type') buildMessages(); // the per-message time field comes and goes
+        // The per-message time field and sender list depend on these.
+        if (['type', 'name', 'group', 'members'].includes(id)) buildMessages();
         syncDerived();
         changed();
       });
@@ -1416,6 +1459,16 @@
       $(id).addEventListener('input', () => { state[id] = Number($(id).value); syncDerived(); changed(); });
     }
     $('charging').addEventListener('change', () => { state.charging = $('charging').checked; changed(); });
+
+    // The pick list only fills in the carrier field, which stays free text.
+    $('carrierPick').addEventListener('change', () => {
+      const picked = $('carrierPick').value;
+      $('carrierPick').value = '';
+      if (!picked) return;
+      state.carrier = picked;
+      $('carrier').value = picked;
+      changed();
+    });
 
     $('avatarPick').addEventListener('click', () => $('avatar').click());
     $('avatar').addEventListener('change', () => { pickAvatar($('avatar').files[0]); $('avatar').value = ''; });
@@ -1429,7 +1482,10 @@
     document.querySelectorAll('[data-add]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const kind = btn.dataset.add;
-        state.messages.push({ kind, text: kind === 'time' ? `Today ${state.time}` : '' });
+        const msg = { kind, text: kind === 'time' ? `Today ${state.time}` : '' };
+        // Without a contact to fall back on, start from the first member.
+        if (kind === 'received' && !groupName() && members().length) msg.sender = members()[0];
+        state.messages.push(msg);
         buildMessages(state.messages.length - 1);
         changed();
       });
