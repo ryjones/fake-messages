@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fake Messages</title>
+<meta name="description" content="Build a mock text message conversation and save it as an image. Runs entirely in your browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Fake Messages</h1>
+  <p>Build a mock text conversation and save it as an image. Everything stays in your browser.</p>
+  <p><a href="https://github.com/ryjones/fake-messages">Source on GitHub</a></p>
+</header>
+
+<main>
+  <section class="editor" aria-label="Editor">
+    <fieldset>
+      <legend>Conversation</legend>
+      <div class="grid">
+        <label>Contact name
+          <input id="name" type="text" maxlength="40">
+        </label>
+        <label>Style
+          <select id="type">
+            <option value="imessage">iMessage (blue)</option>
+            <option value="sms">SMS (green)</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="signal">Signal</option>
+            <option value="line">LINE</option>
+            <option value="irssi">irssi (IRC terminal)</option>
+          </select>
+        </label>
+        <label>Appearance
+          <select id="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <label>Receipt on sent messages
+          <select id="receipt">
+            <option value="none">None</option>
+            <option value="delivered">Delivered</option>
+            <option value="read">Read</option>
+            <option value="failed">Not Delivered</option>
+          </select>
+        </label>
+        <label>Read time
+          <input id="receiptTime" type="text" maxlength="20">
+        </label>
+        <label>Your nick (irssi)
+          <input id="me" type="text" maxlength="30">
+        </label>
+        <div class="avatar-row">
+          <span>Contact photo</span>
+          <div>
+            <input id="avatar" type="file" accept="image/*" hidden>
+            <button type="button" id="avatarPick">Choose…</button>
+            <button type="button" id="avatarClear">Remove</button>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Status bar</legend>
+      <div class="grid">
+        <label>Carrier
+          <input id="carrier" type="text" maxlength="24">
+        </label>
+        <label>Clock
+          <input id="time" type="text" maxlength="12">
+        </label>
+        <label>Connection
+          <select id="conn">
+            <option value="wifi">Wi-Fi</option>
+            <option>5G</option>
+            <option>LTE</option>
+            <option>4G</option>
+            <option>3G</option>
+            <option>E</option>
+            <option value="">None</option>
+          </select>
+        </label>
+        <label>Signal <output id="signalOut"></output>
+          <input id="signal" type="range" min="0" max="4" step="1">
+        </label>
+        <label>Battery <output id="batteryOut"></output>
+          <input id="battery" type="range" min="1" max="100" step="1">
+        </label>
+        <label class="check">
+          <input id="charging" type="checkbox"> Charging
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Messages</legend>
+      <ol id="messages" class="messages"></ol>
+      <div class="add">
+        <button type="button" data-add="received">+ Received</button>
+        <button type="button" data-add="sent">+ Sent</button>
+        <button type="button" data-add="time">+ Timestamp</button>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" id="download" class="primary">Download PNG</button>
+      <button type="button" id="copy">Copy image</button>
+      <button type="button" id="reset" class="danger">Reset</button>
+      <span id="status" role="status"></span>
+    </div>
+  </section>
+
+  <section class="preview" aria-label="Preview">
+    <canvas id="phone" width="1170" height="2532"></canvas>
+  </section>
+</main>
+
+<footer>
+  <p>For jokes, mockups and storyboards. Do not use generated images to deceive, defraud or harass anyone.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
